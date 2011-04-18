@@ -17,6 +17,7 @@
  */
 
 #include <gtk/gtk.h>
+#include <gtk/gtkcheckmenuitem.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -57,11 +58,13 @@ static char *data_file = NULL;
 static char *progname;
 
 static void exit_callback ();
+static void undo_callback ();
 static void copy_callback ();
 static void save_callback ();
 static void clear_callback ();
 static void look_up_callback ();
 static void annotate_callback ();
+static void auto_look_up_callback ();
 
 static void update_sensitivity ();
 
@@ -71,7 +74,9 @@ static GtkItemFactoryEntry menu_items[] =
   { "/File/_Quit", NULL, exit_callback, 0, "<StockItem>", GTK_STOCK_QUIT },
 
   { "/_Edit", NULL, NULL, 0, "<Branch>" },
-  { "/Edit/_Copy", NULL, copy_callback, 0, "<StockItem>", GTK_STOCK_COPY },
+  { "/Edit/_Undo", "<control>Z", undo_callback, 0, "<StockItem>", GTK_STOCK_UNDO },
+  { "/Edit/_Copy", "<control>C", copy_callback, 0, "<StockItem>", GTK_STOCK_COPY },
+  { "/Edit/_Clear", "<control>X", clear_callback, 0, "<StockItem>", GTK_STOCK_CLEAR },
   
   { "/_Character", NULL, NULL, 0, "<Branch>" },
   { "/Character/_Lookup", "<control>L", look_up_callback },
@@ -79,7 +84,8 @@ static GtkItemFactoryEntry menu_items[] =
   { "/Character/_Save", "<control>S", save_callback },
   { "/Character/sep1", NULL, NULL, 0, "<Separator>" },
   
-  { "/Character/_Annotate", NULL, annotate_callback, 0, "<CheckItem>" },
+  { "/Character/An_notate", NULL, annotate_callback, 0, "<CheckItem>" },
+  { "/Character/_Auto lookup", NULL, auto_look_up_callback, 0, "<CheckItem>" },
 };
 
 static int nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
@@ -307,6 +313,12 @@ copy_callback (GtkWidget *w)
 }
 
 static void 
+undo_callback (GtkWidget *w)
+{
+  pad_area_undo_stroke (pad_area);
+}
+
+static void 
 look_up_callback (GtkWidget *w)
 {
   /*	     kill 'HUP',$engine_pid; */
@@ -409,13 +421,29 @@ save_callback (GtkWidget *w)
 static void
 annotate_callback ()
 {
-  pad_area_set_annotate (pad_area, !pad_area->annotate);
+  GtkCheckMenuItem *annotate;
+
+  annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
+  pad_area_set_annotate (pad_area, gtk_check_menu_item_get_active (annotate));
+}
+
+static void
+auto_look_up_callback ()
+{
+  GtkCheckMenuItem *auto_look_up;
+
+  auto_look_up = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Auto lookup"));
+  pad_area_set_auto_look_up (pad_area, gtk_check_menu_item_get_active (auto_look_up));
 }
 
 void
 pad_area_changed_callback (PadArea *area)
 {
   update_sensitivity ();
+  if(area->auto_look_up)
+    {
+      look_up_callback (NULL);
+    }
 }
 
 static void
@@ -432,7 +460,9 @@ update_sensitivity ()
   gboolean have_selected = (kselected.d[0] || kselected.d[1]);
   gboolean have_strokes = (pad_area->strokes != NULL);
 
+  update_path_sensitive ("/Edit/Undo", have_strokes);
   update_path_sensitive ("/Edit/Copy", have_selected);
+  update_path_sensitive ("/Edit/Clear", have_strokes);
   update_path_sensitive ("/Character/Lookup", have_strokes);
   gtk_widget_set_sensitive (lookup_button, have_strokes);
   update_path_sensitive ("/Character/Clear", have_strokes);
@@ -564,6 +594,9 @@ main (int argc, char **argv)
   GtkWidget *vbox;
   GtkWidget *label;
   
+  GtkCheckMenuItem *annotate;
+  GtkCheckMenuItem *auto_look_up;
+
   GtkAccelGroup *accel_group;
 
   PangoFontDescription *font_desc;
@@ -701,6 +734,11 @@ main (int argc, char **argv)
   pango_font_description_free (font_desc);
 
   init_engine();
+
+  annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
+  auto_look_up = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Auto lookup"));
+  gtk_check_menu_item_set_active (annotate, pad_area->annotate);
+  gtk_check_menu_item_set_active (auto_look_up, pad_area->auto_look_up);
 
   gtk_main();
 

@@ -13,6 +13,7 @@ pad_area_free_stroke (GList *stroke)
       tmp_list = tmp_list->next;
     }
   g_list_free (stroke);
+  stroke = NULL;
 }
 
 
@@ -257,7 +258,8 @@ PadArea *pad_area_create ()
   area->strokes = NULL;
   area->curstroke = NULL;
   area->instroke = FALSE;
-  area->annotate = FALSE;
+  area->annotate = TRUE;
+  area->auto_look_up = TRUE;
   area->pixmap = NULL;
 
   return area;
@@ -295,6 +297,29 @@ void pad_area_clear (PadArea *area)
   pad_area_changed_callback (area);  
 }
 
+void pad_area_undo_stroke (PadArea *area)
+{
+
+  if (g_list_length(area->strokes)==1)
+    {
+      pad_area_clear (area);
+    }
+  else
+    {
+      GList *tmp_list;
+
+      tmp_list = area->strokes;
+      while (tmp_list->next)
+        {
+          tmp_list = tmp_list->next;
+        }
+      g_list_remove (area->strokes, tmp_list->data);
+
+      pad_area_init (area);
+      pad_area_changed_callback (area);  
+    }
+}
+
 void pad_area_set_annotate (PadArea *area, gint annotate)
 {
   if (area->annotate != annotate)
@@ -304,5 +329,13 @@ void pad_area_set_annotate (PadArea *area, gint annotate)
     }
 }
 
+void pad_area_set_auto_look_up (PadArea *area, gint auto_look_up)
+{
+  if (area->auto_look_up != auto_look_up)
+    {
+      area->auto_look_up = auto_look_up;
+      pad_area_changed_callback (area);
+    }
+}
 
 
