@@ -1,0 +1,94 @@
+Sun Aug 25 14:01:47 2002  Owen Taylor  <otaylor@redhat.com>
+
+	* Version 2.0.0
+
+	* kanjipad.c Makefile.am: Use a hardcoded path to kpengine.
+
+	* kanjipad.spec.in: Auto-substitute version, update
+	to modern RPM packaging standards.
+
+	* jstroke/strokedata.h: Update with fixes from
+	seer26@telocity.com.
+
+2002-03-16 Owen Taylor <otaylor@redhat.com>
+
+	* kanjipad.c (init_engine): Execute 'kpengine', if 
+	'./kpengine', isn't found, put up a dialog on failure
+	of executing kpengine.
+
+	* kpengine.c Makefile.mingw: Build as a Windows program
+	under Win32 (-mwindows on the link line, WinMain(),
+	not Main()), to avoid popping up a console window.
+
+	* kpengine.c Makefile: On Win32, look in the programs
+	installation directory for jdata.dat.
+
+Fri Mar 15 19:11:33 2002  Owen Taylor  <otaylor@redhat.com>
+
+	* README: Update, convert to UTF-8.
+
+Fri Mar 15 19:03:55 2002  Owen Taylor  <otaylor@redhat.com>
+
+	* kanjipad.[ch] padarea.c: Port to GTK+-2.0.
+
+	* kanjipad.[ch] padarea.c: Sensitize/desensitize
+	menu items and buttons depending on whether we
+	have strokes and/or guesses.
+
+	* gtkglyphlabel.[ch]: Get rid of this, not needed
+	with GTK+-2.0.
+
+	* kpengine.c: Switch over to using stdio for file
+	reading/writing. (A bit more portable, maybe a bit
+	faster.)
+
+	* conv_jdata.pl: Call 'binmode STDOUT'.
+
+	* kanjipad.c: Add a Copy menu item for copying
+	to the clipboard.
+
+Sun Jan 30 14:54:26 2000  Owen Taylor  <otaylor@redhat.com>
+
+	* gtkglyphlabel.c (gtk_glyph_label_set_string16):
+	Fix bug in setting strings longer than one character
+	pointd out by Forrest Cahoon <forrest@pconline.com>
+
+Thu Apr 15 08:32:47 1999  Owen Taylor  <otaylor@redhat.com>
+
+	* gtkglyphlabel.[ch]: New widget for drawing strings
+	  of font glyphs.
+
+	* karea.c: Use GtkGlyphLabel instead of hacking around
+	  with GtkLabel.
+
+	* Released 1.2.2
+
+Wed Mar 31 02:37:07 1999  Owen Taylor  <otaylor@redhat.com>
+
+	* v1.2.1 - Makefile cleanups for RPM-ization
+
+	- Move data files to $(prefix)/share
+
+Fri Mar 19 22:36:16 1999  Owen Taylor  <otaylor@redhat.com>
+
+	* v1.2 - updates to GTK 1.2
+
+	- Use ItemFactory, not MenuFactory
+	- Use new GtkTargetEntry style of handling the selection
+	- hack the character labels to get them to display correctly
+	  (GtkLabel is i18n aware, and as a consequence, gets confused
+	   by 16 bit text masquerading as 8 bit text)
+
+1998-04-08  Owen Taylor  <owt1@cornell.edu>
+
+	* v1.0 - updates to GTK 1.0
+	
+199?-??-??  Owen Taylor  <owt1@cornell.edu>
+
+	* v1.0b1
+
+1997-10-27  Owen Taylor  <owt1@cornell.edu>
+
+	* Initial release of KanjiPad. v0.9
+
+

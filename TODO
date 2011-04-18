@@ -1,0 +1,23 @@
+KanjiPad enhancements
+---------------------
+
+* GNOME-ize KanjiPad
+* Add command line options to point to the data file
+* Work some more on thinning and see if we can make it work
+  OK. (Though not really needed for speed)
+* Options dialog - 
+   Thinning 
+   Data file location
+   Immediate lookup as user writes the character?
+* Write a browser for sample files
+* Automatic test program running engine against sample files
+* Make strokes thicker - calligraphic ? Integrate with gsumi??? ;-)
+* Allow entering multiple characters and storing them for pasting
+  as a bunch into another application
+
+Enhancments in cooperation with JavaDict and JStroke
+----------------------------------------------------
+
+* Kana
+* Stroke count error tolerance
+* Recognizing ligatures (radical based methods?)

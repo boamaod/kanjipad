@@ -1,0 +1,7 @@
+style "kanji_area"
+{
+  fontset = "-*-fixed-medium-r-*--24-*-*-*"
+}
+
+widget_class "*DrawingArea*" style "kanji_area"
+
