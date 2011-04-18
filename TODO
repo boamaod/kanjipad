@@ -8,7 +8,6 @@ KanjiPad enhancements
 * Options dialog - 
    Thinning 
    Data file location
-   Immediate lookup as user writes the character?
 * Write a browser for sample files
 * Automatic test program running engine against sample files
 * Make strokes thicker - calligraphic ? Integrate with gsumi??? ;-)
