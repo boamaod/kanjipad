@@ -39,6 +39,7 @@ typedef struct {
 static GdkPixmap *kpixmap;
 GtkWidget *karea;
 GtkWidget *clear_button;
+GtkWidget *undo_button;
 GtkWidget *lookup_button;
 GtkItemFactory *factory;
 
@@ -467,6 +468,7 @@ update_sensitivity ()
   gtk_widget_set_sensitive (lookup_button, have_strokes);
   update_path_sensitive ("/Character/Clear", have_strokes);
   gtk_widget_set_sensitive (clear_button, have_strokes);
+  gtk_widget_set_sensitive (undo_button, have_strokes);
   update_path_sensitive ("/Character/Save", have_strokes);
 }
 
@@ -715,6 +717,19 @@ main (int argc, char **argv)
 
   gtk_box_pack_start (GTK_BOX (vbox), button, FALSE, FALSE, 0);
   gtk_widget_show (button);
+
+  label = gtk_label_new ("\xe6\x88\xbb");
+  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+  gtk_widget_modify_font (label, font_desc);
+  gtk_widget_show (label);
+
+  undo_button = button = gtk_button_new ();
+  gtk_container_add (GTK_CONTAINER (button), label);
+  g_signal_connect (button, "clicked",
+		    G_CALLBACK (undo_callback), NULL);
+
+  gtk_box_pack_start (GTK_BOX (vbox), button, FALSE, FALSE, 0);
+  gtk_widget_show (button);
   
   label = gtk_label_new ("\xe6\xb6\x88");
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
@@ -739,6 +754,7 @@ main (int argc, char **argv)
   auto_look_up = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Auto lookup"));
   gtk_check_menu_item_set_active (annotate, pad_area->annotate);
   gtk_check_menu_item_set_active (auto_look_up, pad_area->auto_look_up);
+  update_sensitivity ();
 
   gtk_main();
 
