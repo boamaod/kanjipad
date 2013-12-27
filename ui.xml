@@ -1,0 +1,21 @@
+<ui>
+  <menubar name="MainMenu">
+    <menu name="FileMenu" action="FileMenuAction">
+      <menuitem name="Quit" action="QuitAction" />
+      <placeholder name="FileMenuAdditions" />
+    </menu>
+    <menu name="CharacterMenu" action="CharacterMenuAction">
+      <menuitem name="Clear" action="ClearAction"/>
+      <menuitem name="Lookup" action="LookupAction"/>
+    </menu>
+  </menubar>
+  
+  <toolbar name="MainToolbar" action="MainMenuBarAction">
+    <placeholder name="ToolItems">
+      <separator/>
+      <toolitem name="Clear" action="ClearAction"/>
+      <toolitem name="Lookup" action="LookupAction"/>
+      <separator/>
+    </placeholder>
+  </toolbar>
+</ui>

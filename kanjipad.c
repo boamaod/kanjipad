@@ -41,7 +41,7 @@ GtkWidget *karea;
 GtkWidget *clear_button;
 GtkWidget *undo_button;
 GtkWidget *lookup_button;
-GtkItemFactory *factory;
+GtkUIManager *ui_manager;
 
 #define MAX_GUESSES 10
 kp_wchar kanjiguess[MAX_GUESSES];
@@ -68,7 +68,7 @@ static void annotate_callback ();
 static void auto_look_up_callback ();
 
 static void update_sensitivity ();
-
+/*
 static GtkItemFactoryEntry menu_items[] =
 {
   { "/_File", NULL, NULL, 0, "<Branch>" },
@@ -88,8 +88,32 @@ static GtkItemFactoryEntry menu_items[] =
   { "/Character/An_notate", NULL, annotate_callback, 0, "<CheckItem>" },
   { "/Character/_Auto lookup", NULL, auto_look_up_callback, 0, "<CheckItem>" },
 };
+*/
+static GtkActionEntry entries[] = 
+{
+  { "FileMenuAction", NULL, "_File" },                  /* name, stock id, label */
+  { "CharacterMenuAction", NULL, "_Character" },
 
-static int nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
+  
+  { "LookupAction", GTK_STOCK_FIND,                             /* name, stock id */
+    "_Lookup", "<control>L",                                    /* label, accelerator */
+    "Look-up the character drawn",                              /* tooltip */ 
+    G_CALLBACK (look_up_callback) },
+    
+  { "ClearAction", GTK_STOCK_OPEN,
+    "_Clear","<control>C",  
+    "Clear the drawing area",
+    G_CALLBACK (look_up_callback) },
+    
+  { "QuitAction", GTK_STOCK_QUIT,
+    "_Quit", "<control>Q",    
+    "Quit",
+    G_CALLBACK (look_up_callback) }
+};
+
+static guint n_entries = G_N_ELEMENTS (entries);
+
+//static int nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
 
 static void
 karea_get_char_size (GtkWidget *widget,
@@ -168,7 +192,7 @@ karea_draw (GtkWidget *w)
 
   gdk_draw_rectangle (kpixmap, 
 		      w->style->white_gc, TRUE,
-		      0, 0, width, height);
+		      1, 1, width, height);
   
 
   for (i=0; i<num_guesses; i++)
@@ -424,17 +448,18 @@ annotate_callback ()
 {
   GtkCheckMenuItem *annotate;
 
-  annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
-  pad_area_set_annotate (pad_area, gtk_check_menu_item_get_active (annotate));
+  //TODO uimanager
+  /*annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
+    pad_area_set_annotate (pad_area, gtk_check_menu_item_get_active (annotate));*/
 }
 
 static void
 auto_look_up_callback ()
 {
-  GtkCheckMenuItem *auto_look_up;
-
+  /*  GtkCheckMenuItem *auto_look_up;
+  
   auto_look_up = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Auto lookup"));
-  pad_area_set_auto_look_up (pad_area, gtk_check_menu_item_get_active (auto_look_up));
+  pad_area_set_auto_look_up (pad_area, gtk_check_menu_item_get_active (auto_look_up));*/
 }
 
 void
@@ -451,8 +476,8 @@ static void
 update_path_sensitive (const gchar *path,
 		       gboolean     sensitive)
 {
-  GtkWidget *widget = gtk_item_factory_get_widget (factory, path);
-  gtk_widget_set_sensitive (widget, sensitive);
+  /*GtkWidget *widget = gtk_item_factory_get_widget (factory, path);
+    gtk_widget_set_sensitive (widget, sensitive);*/
 }
 
 static void
@@ -645,24 +670,50 @@ main (int argc, char **argv)
   gtk_widget_show (main_vbox);
 
   /* Menu */
+    GtkActionGroup      *action_group;          /* Packing group for our Actions */
+    GtkUIManager        *menu_manager;          /* The magic widget! */
+    GError              *error;                 /* For reporting exceptions or errors */
+    GtkWidget           *toolbar;               /* The actual toolbar */
+    
+  action_group = gtk_action_group_new ("TestActions");
+  gtk_action_group_add_actions (action_group, entries, n_entries, NULL);
 
-  accel_group = gtk_accel_group_new ();
+  menu_manager = gtk_ui_manager_new ();
+  gtk_ui_manager_insert_action_group (menu_manager, action_group, 0);
+
+  error = NULL;
+  gtk_ui_manager_add_ui_from_file (menu_manager, "ui.xml", &error);
+    
+  if (error){
+        g_message ("building menus failed: %s", error->message);
+        g_error_free (error);
+  }  
+  
+  /*accel_group = gtk_accel_group_new ();
   factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>", accel_group);
-  gtk_item_factory_create_items (factory, nmenu_items, menu_items, NULL);
+  gtk_item_factory_create_items (factory, nmenu_items, menu_items, NULL);*/
 
   /* create a menubar */
-  menubar = gtk_item_factory_get_widget (factory, "<main>");
+  /*menubar = gtk_item_factory_get_widget (factory, "<main>");
   gtk_box_pack_start (GTK_BOX (main_vbox), menubar,
 		      FALSE, TRUE, 0);
-  gtk_widget_show (menubar);
+		      gtk_widget_show (menubar);*/
 
   /*  Install the accelerator table in the main window  */
-  gtk_window_add_accel_group (GTK_WINDOW (window), accel_group);
+  //gtk_window_add_accel_group (GTK_WINDOW (window), accel_group);
 
   main_hbox = gtk_hbox_new (FALSE, 0);
+  gtk_container_add (GTK_CONTAINER(window), main_hbox);
   gtk_box_pack_start (GTK_BOX(main_vbox), main_hbox, TRUE, TRUE, 0);
   gtk_widget_show (main_hbox);
 
+  menubar = gtk_ui_manager_get_widget (menu_manager, "/MainMenu");
+  gtk_box_pack_start (GTK_BOX (main_hbox), menubar, FALSE, FALSE, 0);
+  toolbar = gtk_ui_manager_get_widget (menu_manager, "/MainToolbar");
+  gtk_box_pack_start (GTK_BOX (main_hbox), toolbar, FALSE, FALSE, 0);
+  gtk_window_add_accel_group (GTK_WINDOW (window), gtk_ui_manager_get_accel_group (menu_manager));
+    
+    
   /* Area for user to draw characters in */
 
   pad_area = pad_area_create ();
@@ -750,10 +801,10 @@ main (int argc, char **argv)
 
   init_engine();
 
-  annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
+  /*annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
   auto_look_up = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Auto lookup"));
   gtk_check_menu_item_set_active (annotate, pad_area->annotate);
-  gtk_check_menu_item_set_active (auto_look_up, pad_area->auto_look_up);
+  gtk_check_menu_item_set_active (auto_look_up, pad_area->auto_look_up);*/
   update_sensitivity ();
 
   gtk_main();

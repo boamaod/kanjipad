@@ -5,6 +5,8 @@ GTKINC=$(shell pkg-config --cflags gtk+-2.0) -DG_DISABLE_DEPRECATED  -DGDK_DISAB
 GTKLIBS=$(shell pkg-config --libs gtk+-2.0)
 GLIBLIBS=$(shell pkg-config --libs glib-2.0)
 
+LIBS = -lm
+
 PREFIX=/usr/local
 DATADIR=$(PREFIX)/share
 
@@ -31,16 +33,16 @@ CFLAGS = $(OPTIMIZE) $(GTKINC) -DFOR_PILOT_COMPAT -DKP_LIBDIR=\"$(LIBDIR)\" -DBI
 all: kpengine kanjipad jdata.dat
 
 scoring.o: jstroke/scoring.c
-	$(CC) -c -o scoring.o $(CFLAGS) -Ijstroke jstroke/scoring.c
+	$(CC) -c -o scoring.o $(CFLAGS) $(LIBS) -Ijstroke jstroke/scoring.c 
 
 util.o: jstroke/util.c
-	$(CC) -c -o util.o $(CFLAGS) -Ijstroke jstroke/util.c
+	$(CC) -c -o util.o $(CFLAGS) $(LIBS) -Ijstroke jstroke/util.c
 
 kpengine: $(OBJS)
-	$(CC) -o kpengine $(OBJS) $(GLIBLIBS) $(LDFLAGS)
+	$(CC) -o kpengine $(OBJS) $(GLIBLIBS) $(LDFLAGS) $(GTKLIBS)
 
 kanjipad: kanjipad.o padarea.o
-	$(CC) -o kanjipad kanjipad.o padarea.o $(GTKLIBS) $(LDFLAGS)
+	$(CC) -o kanjipad kanjipad.o padarea.o $(GTKLIBS) $(LDFLAGS) $(LIBS)
 
 jdata.dat: jstroke/strokedata.h conv_jdata.pl
 	perl conv_jdata.pl < jstroke/strokedata.h > jdata.dat
