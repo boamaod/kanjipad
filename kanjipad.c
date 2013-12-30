@@ -36,7 +36,8 @@ typedef struct {
 /* Wait for child process? */
 
 /* user interface elements */
-static GdkPixmap *kpixmap;
+//static GdkPixmap *kpixmap;
+static cairo_surface_t *kpixmap;
 GtkWidget *karea;
 GtkWidget *clear_button;
 GtkWidget *undo_button;
@@ -64,56 +65,72 @@ static void copy_callback ();
 static void save_callback ();
 static void clear_callback ();
 static void look_up_callback ();
-static void annotate_callback ();
-static void auto_look_up_callback ();
+static void annotate_callback (GtkCheckMenuItem *menu_item, gpointer user_data);
+static void auto_look_up_callback (GtkCheckMenuItem *menu_item, gpointer user_data);
 
 static void update_sensitivity ();
-/*
-static GtkItemFactoryEntry menu_items[] =
-{
-  { "/_File", NULL, NULL, 0, "<Branch>" },
-  { "/File/_Quit", NULL, exit_callback, 0, "<StockItem>", GTK_STOCK_QUIT },
 
-  { "/_Edit", NULL, NULL, 0, "<Branch>" },
-  { "/Edit/_Undo", "<control>Z", undo_callback, 0, "<StockItem>", GTK_STOCK_UNDO },
-  { "/Edit/_Copy", "<control>C", copy_callback, 0, "<StockItem>", GTK_STOCK_COPY },
-  { "/Edit/_Clear", "<control>X", clear_callback, 0, "<StockItem>", GTK_STOCK_CLEAR },
-  
-  { "/_Character", NULL, NULL, 0, "<Branch>" },
-  { "/Character/_Lookup", "<control>L", look_up_callback },
-  { "/Character/_Clear", "<control>X", clear_callback },
-  { "/Character/_Save", "<control>S", save_callback },
-  { "/Character/sep1", NULL, NULL, 0, "<Separator>" },
-  
-  { "/Character/An_notate", NULL, annotate_callback, 0, "<CheckItem>" },
-  { "/Character/_Auto lookup", NULL, auto_look_up_callback, 0, "<CheckItem>" },
-};
-*/
 static GtkActionEntry entries[] = 
-{
-  { "FileMenuAction", NULL, "_File" },                  /* name, stock id, label */
-  { "CharacterMenuAction", NULL, "_Character" },
+  {
 
-  
-  { "LookupAction", GTK_STOCK_FIND,                             /* name, stock id */
-    "_Lookup", "<control>L",                                    /* label, accelerator */
-    "Look-up the character drawn",                              /* tooltip */ 
-    G_CALLBACK (look_up_callback) },
+    { "FileMenuAction", NULL, "_File" },                  /* name, stock id, label */
+    { "CharacterMenuAction", NULL, "_Character" },
+    { "EditMenuAction", NULL, "_edit" },
+
+    //file  
+    { "QuitAction", NULL,
+      "_Quit", "<control>Q",    
+      "Quit",
+      G_CALLBACK (exit_callback) },
+
+    //edit
+    { "UndoAction", NULL,
+      "_undo", NULL,  
+      "undo",
+      G_CALLBACK (undo_callback) },
+
+    { "CopyAction", NULL,
+      "_copy", NULL,  
+      "copy",
+      G_CALLBACK (copy_callback) },
+
+    //character
+    { "LookupAction", NULL,   
+      "_Lookup", "<control>L",          
+      "Look-up the character drawn",    
+      G_CALLBACK (look_up_callback) },
     
-  { "ClearAction", GTK_STOCK_OPEN,
-    "_Clear","<control>C",  
-    "Clear the drawing area",
-    G_CALLBACK (look_up_callback) },
-    
-  { "QuitAction", GTK_STOCK_QUIT,
-    "_Quit", "<control>Q",    
-    "Quit",
-    G_CALLBACK (look_up_callback) }
+    { "ClearAction", NULL,
+      "_Clear","<control>C",  
+      "Clear the drawing area",
+      G_CALLBACK (clear_callback) },
+
+    { "SaveAction", NULL,
+      "_Save","<control>S",  
+      "write out the points in the character, \
+and the selected character to a file \"samples.dat\" in the \
+current directory. This is intended for making a file of \
+characters for automated testing",
+      G_CALLBACK (save_callback) }  
 };
 
 static guint n_entries = G_N_ELEMENTS (entries);
 
-//static int nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
+
+static GtkToggleActionEntry toggle_entries[] =
+{
+  { "AnnotateAction", NULL,
+    "_Annotate", NULL,  
+    "Display stroke order",
+    G_CALLBACK (annotate_callback), TRUE }, 
+
+  { "AutoLookupAction", NULL,
+    "_Auto Lookup", NULL,  
+    "Lookup when a stroke is drawn",
+    G_CALLBACK (auto_look_up_callback), TRUE }
+};
+
+static guint n_toggle_entries = G_N_ELEMENTS (toggle_entries);
 
 static void
 karea_get_char_size (GtkWidget *widget,
@@ -162,36 +179,49 @@ karea_draw_character (GtkWidget *w,
 
   if (selected >= 0)
     {
+
       gdk_draw_rectangle (kpixmap,
-			  selected ? w->style->bg_gc[GTK_STATE_SELECTED] :
-			  w->style->white_gc,
+			  selected ? gtk_widget_get_style(w)->bg_gc[GTK_STATE_SELECTED] :
+			  gtk_widget_get_style(w)->white_gc,
 			  TRUE,
 			  0, (char_height + 6) *index, w->allocation.width - 1, char_height + 5);
+
     }
 
   string_utf = utf8_for_char (kanjiguess[index]);
   layout = gtk_widget_create_pango_layout (w, string_utf);
   g_free (string_utf);
 
-  x = (w->allocation.width - char_width) / 2;
-  
+ GtkAllocation *allocation = g_new0 (GtkAllocation, 1);
+ gtk_widget_get_allocation(GTK_WIDGET(w), allocation);
+ 
+  x = (allocation->width - char_width) / 2;
+
   gdk_draw_layout (kpixmap, 
-		   (selected > 0) ? w->style->white_gc :
-		                    w->style->black_gc,
+		   (selected > 0) ? gtk_widget_get_style(w)->white_gc :
+		                    gtk_widget_get_style(w)->black_gc,
 		   x, (char_height + 6) * index + 3, layout);
+  
   g_object_unref (layout);
+  g_free (allocation);   
 }
 
 
 static void
 karea_draw (GtkWidget *w)
 {
-  gint width = w->allocation.width;
-  gint height = w->allocation.height;
+  GtkAllocation *allocation = g_new0 (GtkAllocation, 1);
+  gtk_widget_get_allocation(GTK_WIDGET(w), allocation);
+ 
+  gint width = allocation->width;
+  gint height = allocation->height;
+
+  g_free (allocation);
+  
   int i;
 
-  gdk_draw_rectangle (kpixmap, 
-		      w->style->white_gc, TRUE,
+    gdk_draw_rectangle (kpixmap, 
+		      gtk_widget_get_style(w)->white_gc, TRUE,
 		      1, 1, width, height);
   
 
@@ -212,7 +242,7 @@ karea_configure_event (GtkWidget *w, GdkEventConfigure *event)
   if (kpixmap)
     g_object_unref (kpixmap);
 
-  kpixmap = gdk_pixmap_new (w->window, event->width, event->height, -1);
+  kpixmap = gdk_pixmap_new (gtk_widget_get_window(w), event->width, event->height, -1);
 
   karea_draw (w);
   
@@ -224,13 +254,13 @@ karea_expose_event (GtkWidget *w, GdkEventExpose *event)
 {
   if (!kpixmap)
     return 0;
-
-  gdk_draw_drawable (w->window,
-		     w->style->fg_gc[GTK_STATE_NORMAL], kpixmap,
+  
+  gdk_draw_drawable (gtk_widget_get_window(w),
+		     gtk_widget_get_style(w)->fg_gc[GTK_STATE_NORMAL], kpixmap,
 		     event->area.x, event->area.y,
 		     event->area.x, event->area.y,
 		     event->area.width, event->area.height);
-
+  
     return 0;
 }
 
@@ -444,22 +474,19 @@ save_callback (GtkWidget *w)
 }
 
 static void
-annotate_callback ()
+annotate_callback (GtkCheckMenuItem *menu_item, gpointer user_data)
 {
-  GtkCheckMenuItem *annotate;
-
-  //TODO uimanager
-  /*annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
-    pad_area_set_annotate (pad_area, gtk_check_menu_item_get_active (annotate));*/
+  //gboolean is_annotate = gtk_check_menu_item_get_active(menu_item);
+  gboolean is_annotate = !pad_area->annotate;
+  pad_area_set_annotate (pad_area, is_annotate);
 }
 
 static void
-auto_look_up_callback ()
+auto_look_up_callback (GtkCheckMenuItem *menu_item, gpointer user_data)
 {
-  /*  GtkCheckMenuItem *auto_look_up;
-  
-  auto_look_up = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Auto lookup"));
-  pad_area_set_auto_look_up (pad_area, gtk_check_menu_item_get_active (auto_look_up));*/
+  //gboolean is_auto_look_up = menu_item->active;
+  gboolean is_auto_look_up = !pad_area->auto_look_up;
+  pad_area_set_auto_look_up (pad_area, is_auto_look_up);
 }
 
 void
@@ -476,7 +503,7 @@ static void
 update_path_sensitive (const gchar *path,
 		       gboolean     sensitive)
 {
-  /*GtkWidget *widget = gtk_item_factory_get_widget (factory, path);
+  /*TODO GtkWidget *widget = gtk_item_factory_get_widget (factory, path);
     gtk_widget_set_sensitive (widget, sensitive);*/
 }
 
@@ -621,9 +648,6 @@ main (int argc, char **argv)
   GtkWidget *vbox;
   GtkWidget *label;
   
-  GtkCheckMenuItem *annotate;
-  GtkCheckMenuItem *auto_look_up;
-
   GtkAccelGroup *accel_group;
 
   PangoFontDescription *font_desc;
@@ -675,19 +699,24 @@ main (int argc, char **argv)
     GError              *error;                 /* For reporting exceptions or errors */
     GtkWidget           *toolbar;               /* The actual toolbar */
     
-  action_group = gtk_action_group_new ("TestActions");
+  action_group = gtk_action_group_new ("MainMenu");
   gtk_action_group_add_actions (action_group, entries, n_entries, NULL);
-
+  gtk_action_group_add_toggle_actions (action_group, toggle_entries, n_toggle_entries, NULL);  
+  
   menu_manager = gtk_ui_manager_new ();
   gtk_ui_manager_insert_action_group (menu_manager, action_group, 0);
 
   error = NULL;
   gtk_ui_manager_add_ui_from_file (menu_manager, "ui.xml", &error);
-    
+
   if (error){
         g_message ("building menus failed: %s", error->message);
         g_error_free (error);
-  }  
+  }
+
+  //Add the menu bar
+  menubar = gtk_ui_manager_get_widget (menu_manager, "/MainMenu");
+  gtk_box_pack_start (GTK_BOX (main_vbox), menubar, FALSE, FALSE, 0);
   
   /*accel_group = gtk_accel_group_new ();
   factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>", accel_group);
@@ -706,13 +735,11 @@ main (int argc, char **argv)
   gtk_container_add (GTK_CONTAINER(window), main_hbox);
   gtk_box_pack_start (GTK_BOX(main_vbox), main_hbox, TRUE, TRUE, 0);
   gtk_widget_show (main_hbox);
-
-  menubar = gtk_ui_manager_get_widget (menu_manager, "/MainMenu");
-  gtk_box_pack_start (GTK_BOX (main_hbox), menubar, FALSE, FALSE, 0);
-  toolbar = gtk_ui_manager_get_widget (menu_manager, "/MainToolbar");
+  
+  /*  toolbar = gtk_ui_manager_get_widget (menu_manager, "/MainToolbar");
   gtk_box_pack_start (GTK_BOX (main_hbox), toolbar, FALSE, FALSE, 0);
   gtk_window_add_accel_group (GTK_WINDOW (window), gtk_ui_manager_get_accel_group (menu_manager));
-    
+  */
     
   /* Area for user to draw characters in */
 
@@ -801,10 +828,6 @@ main (int argc, char **argv)
 
   init_engine();
 
-  /*annotate = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Annotate"));
-  auto_look_up = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_item(factory, "/Character/Auto lookup"));
-  gtk_check_menu_item_set_active (annotate, pad_area->annotate);
-  gtk_check_menu_item_set_active (auto_look_up, pad_area->auto_look_up);*/
   update_sensitivity ();
 
   gtk_main();
