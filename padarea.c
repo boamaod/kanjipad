@@ -86,14 +86,14 @@ pad_area_init (PadArea *area)
 {
   GList *tmp_list;
   int index = 1;
-  
+
   guint16 width = area->widget->allocation.width;
   guint16 height = area->widget->allocation.height;
 
   gdk_draw_rectangle (area->pixmap, 
 		      area->widget->style->white_gc, TRUE,
 		      0, 0, width, height);
-
+  
   tmp_list = area->strokes;
   while (tmp_list)
     {
@@ -109,10 +109,10 @@ pad_area_init (PadArea *area)
 	{
 	  cur = (GdkPoint *)stroke_list->data;
 	  if (old)
-	    gdk_draw_line (area->pixmap, 
+	       gdk_draw_line (area->pixmap, 
 			   area->widget->style->black_gc,
 			   old->x, old->y, cur->x, cur->y);
-
+	    
 	  old = cur;
 	  stroke_list = stroke_list->next;
 	}
@@ -132,7 +132,7 @@ pad_area_configure_event (GtkWidget *w, GdkEventConfigure *event,
   if (area->pixmap)
     g_object_unref (area->pixmap);
 
-  area->pixmap = gdk_pixmap_new (w->window, event->width, event->height, -1);
+  area->pixmap = gdk_pixmap_new (gtk_widget_get_window(w), event->width, event->height, -1);
 
   pad_area_init (area);
   
@@ -145,7 +145,7 @@ pad_area_expose_event (GtkWidget *w, GdkEventExpose *event, PadArea *area)
   if (!area->pixmap)
     return 0;
 
-  gdk_draw_drawable (w->window,
+  gdk_draw_drawable (gtk_widget_get_window(w),
 		     w->style->fg_gc[GTK_STATE_NORMAL], area->pixmap,
 		     event->area.x, event->area.y,
 		     event->area.x, event->area.y,
@@ -192,7 +192,7 @@ pad_area_motion_event (GtkWidget *w, GdkEventMotion *event, PadArea *area)
 
   if (event->is_hint)
     {
-      gdk_window_get_pointer (w->window, &x, &y, &state);
+      gdk_window_get_pointer (gtk_widget_get_window(w), &x, &y, &state);
     }
   else
     {
@@ -209,8 +209,9 @@ pad_area_motion_event (GtkWidget *w, GdkEventMotion *event, PadArea *area)
       GdkPoint *old = (GdkPoint *)g_list_last (area->curstroke)->data;
 
       gdk_draw_line (area->pixmap, w->style->black_gc,
-		     old->x, old->y, x, y);
+      	     old->x, old->y, x, y);
 
+      
       if (old->x < x) { xmin = old->x; xmax = x; }
       else            { xmin = x;      xmax = old->x; }
 
@@ -221,7 +222,7 @@ pad_area_motion_event (GtkWidget *w, GdkEventMotion *event, PadArea *area)
       rect.y = ymin = 1;
       rect.width  = xmax - xmin + 2;
       rect.height = ymax - ymin + 2;
-      gdk_window_invalidate_rect (w->window, &rect, FALSE);
+      gdk_window_invalidate_rect (gtk_widget_get_window(w), &rect, FALSE);
 
       p = g_new (GdkPoint, 1);
       p->x = x;
@@ -231,6 +232,29 @@ pad_area_motion_event (GtkWidget *w, GdkEventMotion *event, PadArea *area)
 
   return TRUE;
 }
+/*
+gboolean
+draw_callback (GtkWidget *widget, cairo_t *cr, gpointer data)
+{
+  guint width, height;
+  GdkRGBA color;
+
+  width = gtk_widget_get_allocated_width (widget);
+  height = gtk_widget_get_allocated_height (widget);
+  cairo_arc (cr,
+             width / 2.0, height / 2.0,
+             MIN (width, height) / 2.0,
+             0, 2 * G_PI);
+  
+  gtk_style_context_get_color (gtk_widget_get_style_context (widget),
+                               0,
+                               &color);
+  gdk_cairo_set_source_rgba (cr, &color);
+  
+  cairo_fill (cr);
+
+ return FALSE;
+ }*/
 
 PadArea *pad_area_create ()
 {
@@ -249,7 +273,9 @@ PadArea *pad_area_create ()
 		    G_CALLBACK (pad_area_button_release_event), area);
   g_signal_connect (area->widget, "motion_notify_event",
 		    G_CALLBACK (pad_area_motion_event), area);
-
+  /* g_signal_connect (area->widget, "draw",
+     G_CALLBACK (draw_callback), area);*/
+  
   gtk_widget_set_events (area->widget, 
 			 GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK 
 			 | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK 

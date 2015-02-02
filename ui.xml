@@ -1,0 +1,20 @@
+<ui>
+  <menubar name="MainMenu">
+    <menu name="FileMenu" action="FileMenuAction">
+      <menuitem name="Quit" action="QuitAction" />
+      <placeholder name="FileMenuAdditions" />
+    </menu>
+    <menu name="EditMenu" action="EditMenuAction">
+      <menuitem name="Undo" action="UndoAction"/>
+      <menuitem name="Copy" action="CopyAction"/>
+      <menuitem name="Clear" action="ClearAction"/>      
+    </menu>
+    <menu name="CharacterMenu" action="CharacterMenuAction">
+      <menuitem name="Clear" action="ClearAction"/>
+      <menuitem name="Lookup" action="LookupAction"/>
+      <menuitem name="Save" action="SaveAction"/>
+      <menuitem name="Annotate" action="AnnotateAction"/>
+      <menuitem name="AutoLookup" action="AutoLookupAction"/>
+    </menu>
+  </menubar>
+</ui>
