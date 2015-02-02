@@ -75,7 +75,7 @@ static GtkActionEntry entries[] =
 
     { "FileMenuAction", NULL, "_File" },                  /* name, stock id, label */
     { "CharacterMenuAction", NULL, "_Character" },
-    { "EditMenuAction", NULL, "_edit" },
+    { "EditMenuAction", NULL, "_Edit" },
 
     //file  
     { "QuitAction", NULL,
@@ -85,12 +85,12 @@ static GtkActionEntry entries[] =
 
     //edit
     { "UndoAction", NULL,
-      "_undo", NULL,  
+      "_Undo", "<control>Z",  
       "undo",
       G_CALLBACK (undo_callback) },
 
     { "CopyAction", NULL,
-      "_copy", NULL,  
+      "_Copy", "<control>C",  
       "copy",
       G_CALLBACK (copy_callback) },
 
@@ -101,7 +101,7 @@ static GtkActionEntry entries[] =
       G_CALLBACK (look_up_callback) },
     
     { "ClearAction", NULL,
-      "_Clear","<control>C",  
+      "_Clear","<control>X",  
       "Clear the drawing area",
       G_CALLBACK (clear_callback) },
 
